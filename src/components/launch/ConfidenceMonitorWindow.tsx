@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	recordingOutputAspectCss,
+	type RecordingOutputAspectRatio,
+} from "../../lib/recordingFormat";
 import { computeZoomTransform } from "../../lib/zoomMath/zoomTransform";
 import styles from "./ConfidenceMonitorWindow.module.css";
 
@@ -45,6 +49,8 @@ export function ConfidenceMonitorWindow() {
 	const [screenStatus, setScreenStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
 	const [cameraStatus, setCameraStatus] = useState<"off" | "connecting" | "live" | "busy">("off");
 	const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+	const [outputAspectRatio, setOutputAspectRatio] =
+		useState<RecordingOutputAspectRatio>("16:9");
 	const [cursor, setCursor] = useState<LiveCursorSample | null>(null);
 	const [zoomFocus, setZoomFocus] = useState({ cx: 0.5, cy: 0.5 });
 	const [zoomActive, setZoomActive] = useState(false);
@@ -82,9 +88,15 @@ export function ConfidenceMonitorWindow() {
 	useEffect(() => {
 		let cancelled = false;
 		void window.electronAPI.getRecordingPrefs().then((prefs) => {
-			if (!cancelled) setMicrophoneEnabled(prefs.micEnabled);
+			if (!cancelled) {
+				setMicrophoneEnabled(prefs.micEnabled);
+				setOutputAspectRatio(prefs.outputAspectRatio);
+			}
 		});
-		const off = window.electronAPI.onRecordingPrefsChanged((prefs) => setMicrophoneEnabled(prefs.micEnabled));
+		const off = window.electronAPI.onRecordingPrefsChanged((prefs) => {
+			setMicrophoneEnabled(prefs.micEnabled);
+			setOutputAspectRatio(prefs.outputAspectRatio);
+		});
 		return () => {
 			cancelled = true;
 			off();
@@ -194,6 +206,14 @@ export function ConfidenceMonitorWindow() {
 	}, []);
 
 	const elapsed = state.startedAtMs ? now - state.startedAtMs : 0;
+	const portrait = outputAspectRatio === "9:16";
+	const screenFocusX = Math.max(0, Math.min(1, cursor?.cx ?? zoomFocus.cx));
+	const setFormat = (ratio: RecordingOutputAspectRatio) => {
+		setOutputAspectRatio(ratio);
+		void window.electronAPI.setRecordingPrefs({ outputAspectRatio: ratio }).catch((error) => {
+			console.warn("[confidence-monitor] failed to persist output format", error);
+		});
+	};
 	const zoom = useMemo(() => computeZoomTransform({
 		stageSize: { width: 1, height: 1 },
 		baseMask: { x: 0, y: 0, width: 1, height: 1 },
@@ -212,6 +232,19 @@ export function ConfidenceMonitorWindow() {
 					<span className={styles.timer}>{formatElapsed(elapsed)}</span>
 				</div>
 				<div className={styles.source} title={state.sourceName}>{state.sourceName}</div>
+				<div className={styles.formatPicker} aria-label="Formato do vídeo">
+					{(["16:9", "9:16"] as const).map((ratio) => (
+						<button
+							key={ratio}
+							type="button"
+							data-active={outputAspectRatio === ratio}
+							aria-pressed={outputAspectRatio === ratio}
+							onClick={() => setFormat(ratio)}
+						>
+							{ratio}
+						</button>
+					))}
+				</div>
 				<div className={styles.badges}>
 					<span data-active={screenStatus === "live"}>SCREEN</span>
 					<span data-active={cameraStatus === "live"}>CAM</span>
@@ -220,12 +253,30 @@ export function ConfidenceMonitorWindow() {
 				</div>
 			</header>
 			<main className={styles.stage}>
-				<div className={styles.previewFrame}>
+				<div
+					className={styles.previewFrame}
+					data-format={outputAspectRatio}
+					style={{
+						aspectRatio: recordingOutputAspectCss(outputAspectRatio),
+						width: portrait
+							? "min(100%, calc((100vh - 138px) * 9 / 16))"
+							: "min(100%, calc((100vh - 138px) * 16 / 9))",
+					}}
+				>
 					<div className={styles.screenLayer} style={{
 						transform: `translate(${zoom.x * 100}%, ${zoom.y * 100}%) scale(${zoom.scale})`,
 						transformOrigin: "0 0",
 					}}>
-						<video ref={screenVideoRef} muted playsInline className={styles.screenVideo} />
+						<video
+							ref={screenVideoRef}
+							muted
+							playsInline
+							className={styles.screenVideo}
+							style={{
+								objectFit: portrait ? "cover" : "contain",
+								objectPosition: portrait ? `${screenFocusX * 100}% 50%` : "50% 50%",
+							}}
+						/>
 					</div>
 					{cursor?.visible !== false && cursor ? (
 						<div className={styles.cursor} style={{ left: `${cursor.cx * 100}%`, top: `${cursor.cy * 100}%` }} />
@@ -251,8 +302,14 @@ export function ConfidenceMonitorWindow() {
 				</div>
 			</main>
 			<footer className={styles.footer}>
-				<span>Monitor de retorno · protegido da captura</span>
-				<span>Zoom ao vivo é uma aproximação baseada nos cliques; a edição final continua ajustável.</span>
+				<span>
+					Monitor de retorno · {outputAspectRatio} · protegido da captura
+				</span>
+				<span>
+					{portrait
+						? "9:16 acompanha horizontalmente o cursor; a captura original continua inteira."
+						: "Zoom ao vivo é uma aproximação baseada nos cliques; a edição final continua ajustável."}
+				</span>
 			</footer>
 		</div>
 	);
