@@ -34,6 +34,10 @@ import {
 } from "../../src/lib/nativeMacRecording";
 import type { NativeWindowsRecordingRequest } from "../../src/lib/nativeWindowsRecording";
 import {
+	DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
+	type RecordingOutputAspectRatio,
+} from "../../src/lib/recordingFormat";
+import {
 	type CursorCaptureMode,
 	normalizeCursorCaptureMode,
 	normalizeProjectMedia,
@@ -664,6 +668,7 @@ export interface RecordingPrefs {
 	hideDesktopIcons: boolean;
 	/** Whether a fresh take gets automatic zooms on import. Persisted; defaults on. */
 	autoZoomEnabled: boolean;
+	outputAspectRatio: RecordingOutputAspectRatio;
 }
 const defaultRecordingPrefs: RecordingPrefs = {
 	micEnabled: false,
@@ -677,6 +682,7 @@ const defaultRecordingPrefs: RecordingPrefs = {
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
+	outputAspectRatio: DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
 };
 
 // Cached source from the user's pick. Used by setDisplayMediaRequestHandler in main.ts for cursor-free capture.
