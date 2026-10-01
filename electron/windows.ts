@@ -625,7 +625,7 @@ export function createConfidenceMonitorWindow(): BrowserWindow {
 	const target = displays.find((display) => display.id !== primary.id) ?? primary;
 	const { workArea } = target;
 	const width = Math.min(1280, Math.max(720, Math.floor(workArea.width * 0.78)));
-	const height = Math.min(820, Math.max(480, Math.floor(width * 9 / 16 + 112)));
+	const height = Math.min(820, Math.max(480, Math.floor((width * 9) / 16 + 112)));
 	const x = Math.round(workArea.x + (workArea.width - width) / 2);
 	const y = Math.round(workArea.y + (workArea.height - height) / 2);
 
