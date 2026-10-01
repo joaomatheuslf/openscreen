@@ -153,9 +153,17 @@ let sourceSelectorWindow: BrowserWindow | null = null;
 let countdownOverlayWindow: BrowserWindow | null = null;
 let confidenceMonitorWindow: BrowserWindow | null = null;
 let notesWindow: BrowserWindow | null = null;
-let confidenceMonitorState = { recording: false, sourceName: "Screen", startedAtMs: null as number | null };
+let confidenceMonitorState = {
+	recording: false,
+	sourceName: "Screen",
+	startedAtMs: null as number | null,
+};
 setConfidenceMonitorCursorSink((sample) => {
-	if (!confidenceMonitorWindow || confidenceMonitorWindow.isDestroyed() || !confidenceMonitorState.recording) {
+	if (
+		!confidenceMonitorWindow ||
+		confidenceMonitorWindow.isDestroyed() ||
+		!confidenceMonitorState.recording
+	) {
 		return;
 	}
 	confidenceMonitorWindow.webContents.send("confidence-monitor-cursor", sample);
