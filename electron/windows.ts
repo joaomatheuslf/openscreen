@@ -614,6 +614,62 @@ export function createSourceSelectorWindow(): BrowserWindow {
  * Centered transparent countdown overlay that sits above the HUD during
  * recording pre-roll.
  */
+/**
+ * Capture-safe return monitor for a second display. The renderer opens a
+ * low-resolution preview stream of the selected source; the real recording
+ * pipeline remains completely separate.
+ */
+export function createConfidenceMonitorWindow(): BrowserWindow {
+	const displays = screen.getAllDisplays();
+	const primary = screen.getPrimaryDisplay();
+	const target = displays.find((display) => display.id !== primary.id) ?? primary;
+	const { workArea } = target;
+	const width = Math.min(1280, Math.max(720, Math.floor(workArea.width * 0.78)));
+	const height = Math.min(820, Math.max(480, Math.floor(width * 9 / 16 + 112)));
+	const x = Math.round(workArea.x + (workArea.width - width) / 2);
+	const y = Math.round(workArea.y + (workArea.height - height) / 2);
+
+	const win = new BrowserWindow({
+		width,
+		height,
+		minWidth: 720,
+		minHeight: 480,
+		x,
+		y,
+		title: "OpenScreen — Confidence Monitor",
+		backgroundColor: "#09090b",
+		resizable: true,
+		alwaysOnTop: false,
+		skipTaskbar: false,
+		show: false,
+		webPreferences: {
+			preload: path.join(__dirname, "preload.mjs"),
+			additionalArguments: [ASSET_BASE_URL_ARG],
+			nodeIntegration: false,
+			contextIsolation: true,
+			backgroundThrottling: false,
+		},
+	});
+
+	if (process.platform !== "darwin") {
+		win.setAutoHideMenuBar(true);
+	}
+	applyContentProtection(win, "Confidence Monitor");
+
+	win.once("ready-to-show", () => {
+		applyContentProtection(win, "Confidence Monitor");
+		if (!HEADLESS) win.showInactive();
+	});
+
+	const routing = { windowType: "confidence-monitor" };
+	if (VITE_DEV_SERVER_URL) {
+		win.loadURL(`${VITE_DEV_SERVER_URL}?${new URLSearchParams(routing).toString()}`);
+	} else {
+		win.loadFile(path.join(RENDERER_DIST, "index.html"), { query: routing });
+	}
+	return win;
+}
+
 export function createCountdownOverlayWindow(): BrowserWindow {
 	const { workArea } = screen.getPrimaryDisplay();
 	const overlayWidth = 420;

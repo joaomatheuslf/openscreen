@@ -1,4 +1,5 @@
 import type { Rectangle } from "electron";
+import type { CursorRecordingSample } from "../../../../src/native/contracts";
 import { MacNativeCursorRecordingSession } from "./macNativeCursorRecordingSession";
 import { PipeWireCursorRecordingSession } from "./pipeWireCursorRecordingSession";
 import type { CursorRecordingSession } from "./session";
@@ -12,6 +13,7 @@ interface CreateCursorRecordingSessionOptions {
 	sampleIntervalMs: number;
 	sourceId?: string | null;
 	startTimeMs?: number;
+	onSample?: (sample: CursorRecordingSample) => void;
 }
 
 export function createCursorRecordingSession(
@@ -24,6 +26,7 @@ export function createCursorRecordingSession(
 			sampleIntervalMs: options.sampleIntervalMs,
 			sourceId: options.sourceId,
 			startTimeMs: options.startTimeMs,
+			onSample: options.onSample,
 		});
 	}
 

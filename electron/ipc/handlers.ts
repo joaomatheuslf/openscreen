@@ -720,6 +720,14 @@ function isTrustedProjectPath(filePath?: string | null) {
 const CURSOR_SAMPLE_INTERVAL_MS = 33;
 const MAX_CURSOR_SAMPLES = 60 * 60 * 30; // 1 hour @ 30Hz
 
+let confidenceMonitorCursorSink: ((sample: CursorRecordingSample) => void) | null = null;
+
+export function setConfidenceMonitorCursorSink(
+	sink: ((sample: CursorRecordingSample) => void) | null,
+) {
+	confidenceMonitorCursorSink = sink;
+}
+
 let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
 let nativeWindowsCaptureProcess: ChildProcessWithoutNullStreams | null = null;
@@ -1299,6 +1307,7 @@ async function startCursorRecording(recordingId?: number) {
 		sourceId: getSelectedSourceId(),
 		startTimeMs:
 			typeof recordingId === "number" && Number.isFinite(recordingId) ? recordingId : undefined,
+		onSample: (sample) => confidenceMonitorCursorSink?.(sample),
 	});
 
 	try {

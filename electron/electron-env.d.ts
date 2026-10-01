@@ -68,6 +68,29 @@ interface Window {
 		onRecordingPrefsChanged: (
 			callback: (prefs: import("./ipc/handlers").RecordingPrefs) => void,
 		) => () => void;
+		getConfidenceMonitorState: () => Promise<{
+			recording: boolean;
+			sourceName: string;
+			startedAtMs: number | null;
+		}>;
+		onConfidenceMonitorState: (
+			callback: (state: {
+				recording: boolean;
+				sourceName: string;
+				startedAtMs: number | null;
+			}) => void,
+		) => () => void;
+		onConfidenceMonitorCursor: (
+			callback: (sample: {
+				timeMs: number;
+				cx: number;
+				cy: number;
+				visible?: boolean;
+				interactionType?: string;
+			}) => void,
+		) => () => void;
+		openConfidenceMonitor: () => void;
+		closeConfidenceMonitor: () => void;
 		onSourceSelectorClosed: (callback: () => void) => () => void;
 		onAutoStartRecording: (callback: () => void) => () => void;
 		onAiEditionChatEvent: (
