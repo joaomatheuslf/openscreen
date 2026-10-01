@@ -169,7 +169,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			startedAtMs: number | null;
 		}>,
 	onConfidenceMonitorState: (
-		callback: (state: { recording: boolean; sourceName: string; startedAtMs: number | null }) => void,
+		callback: (state: {
+			recording: boolean;
+			sourceName: string;
+			startedAtMs: number | null;
+		}) => void,
 	) => {
 		const listener = (
 			_event: unknown,
@@ -187,7 +191,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			interactionType?: string;
 		}) => void,
 	) => {
-		const listener = (_event: unknown, sample: any) => callback(sample);
+		const listener = (
+			_event: unknown,
+			sample: {
+				timeMs: number;
+				cx: number;
+				cy: number;
+				visible?: boolean;
+				interactionType?: string;
+			},
+		) => callback(sample);
 		ipcRenderer.on("confidence-monitor-cursor", listener);
 		return () => ipcRenderer.removeListener("confidence-monitor-cursor", listener);
 	},
