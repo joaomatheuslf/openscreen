@@ -1,0 +1,18 @@
+name: Confidence Monitor Check
+
+on:
+  push:
+    branches: [feat-confidence-monitor]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Vite build
+        run: npx vite build
+      - name: Unit tests
+        run: npm run test
