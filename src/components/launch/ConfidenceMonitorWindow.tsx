@@ -160,10 +160,6 @@ export function ConfidenceMonitorWindow() {
 					return;
 				}
 				cameraStreamRef.current = stream;
-				if (cameraVideoRef.current) {
-					cameraVideoRef.current.srcObject = stream;
-					await cameraVideoRef.current.play().catch(() => undefined);
-				}
 				setCameraStatus("live");
 			} catch {
 				if (!cancelled) setCameraStatus("busy");
@@ -175,6 +171,21 @@ export function ConfidenceMonitorWindow() {
 			cameraStreamRef.current = null;
 		};
 	}, [state.recording]);
+
+	// The camera <video> is rendered only after cameraStatus becomes "live".
+	// Attach the stream in a separate effect so the ref exists on that render;
+	// doing this before setCameraStatus("live") leaves the preview black.
+	useEffect(() => {
+		if (cameraStatus !== "live") return;
+		const video = cameraVideoRef.current;
+		const stream = cameraStreamRef.current;
+		if (!video || !stream) return;
+		video.srcObject = stream;
+		void video.play().catch(() => undefined);
+		return () => {
+			if (video.srcObject === stream) video.srcObject = null;
+		};
+	}, [cameraStatus]);
 
 	useEffect(() => () => {
 		stopStream(screenStreamRef.current);
