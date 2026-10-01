@@ -6,6 +6,12 @@ import {
 	type WebcamQualityId,
 	webcamQualityFrom,
 } from "../src/hooks/webcamCaptureTarget";
+import {
+	DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
+	RECORDING_OUTPUT_ASPECT_RATIOS,
+	type RecordingOutputAspectRatio,
+	recordingOutputAspectRatioFrom,
+} from "../src/lib/recordingFormat";
 import type { CursorCaptureMode } from "../src/lib/recordingSession";
 
 export interface RecordingPreferences {
@@ -29,6 +35,11 @@ export interface RecordingPreferences {
 	 * behaviour it gates has been on for every such installation.
 	 */
 	autoZoomEnabled: boolean;
+	/**
+	 * Canvas the editor should open the new take in. Capture remains full-frame;
+	 * this only chooses the editable output composition.
+	 */
+	outputAspectRatio: RecordingOutputAspectRatio;
 }
 
 export const DEFAULT_RECORDING_PREFERENCES: RecordingPreferences = {
@@ -43,6 +54,7 @@ export const DEFAULT_RECORDING_PREFERENCES: RecordingPreferences = {
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
+	outputAspectRatio: DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
 };
 
 export interface RecordingSourceDescriptor {
@@ -122,6 +134,7 @@ function parseRecording(raw: RawSettings): RecordingPreferences {
 				: DEFAULT_RECORDING_PREFERENCES.cursorCaptureMode,
 		hideDesktopIcons: bool(raw.hideDesktopIcons, DEFAULT_RECORDING_PREFERENCES.hideDesktopIcons),
 		autoZoomEnabled: bool(raw.autoZoomEnabled, DEFAULT_RECORDING_PREFERENCES.autoZoomEnabled),
+		outputAspectRatio: recordingOutputAspectRatioFrom(raw.outputAspectRatio),
 	};
 }
 
@@ -178,6 +191,12 @@ function validateRecordingPatch(patch: Partial<RecordingPreferences>): void {
 		}
 		if (key === "cursorCaptureMode" && value !== "system" && value !== "editable-overlay") {
 			throw new TypeError("cursorCaptureMode is invalid");
+		}
+		if (
+			key === "outputAspectRatio" &&
+			!RECORDING_OUTPUT_ASPECT_RATIOS.includes(value as RecordingOutputAspectRatio)
+		) {
+			throw new TypeError("outputAspectRatio is invalid");
 		}
 		// Rejected here rather than coerced on read, so a bad write is a visible
 		// error at its source instead of a resolution that silently is not the
