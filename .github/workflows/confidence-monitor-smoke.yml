@@ -12,5 +12,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: npx tsc --noEmit
+      - run: npx tsc -p tsconfig.test.json --noEmit
       - run: npx vitest --run electron/app-settings.test.ts src/components/ai-edition/recordingImport.test.ts
       - run: npx vite build
