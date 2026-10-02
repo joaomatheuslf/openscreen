@@ -19,9 +19,11 @@ jobs:
       - name: Setup Node
         uses: ./.github/actions/setup
 
-      - name: Build whisper STT payload
+      - name: Stage whisper STT binaries
         shell: bash
-        run: npm run build:whisper-binaries
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/stage-whisper-stt.sh win32-x64
 
       - name: Build Windows installer
         run: npm run build:win -- --publish never
