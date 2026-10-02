@@ -130,6 +130,22 @@ describe("app settings store", () => {
 		expect(store.getSnapshot().recording).toMatchObject({ micEnabled: true, micDeviceId: "mic" });
 	});
 
+	it("persists the recording output format and rejects unknown aspect ratios", () => {
+		const dir = temp();
+		const file = path.join(dir, "recording-settings.json");
+		const store = new AppSettingsStore(dir);
+
+		expect(store.getSnapshot().recording.outputAspectRatio).toBe("16:9");
+		expect(
+			store.setRecordingPreferences({ outputAspectRatio: "9:16" }).recording.outputAspectRatio,
+		).toBe("9:16");
+		expect(JSON.parse(readFileSync(file, "utf8"))).toMatchObject({ outputAspectRatio: "9:16" });
+		expect(new AppSettingsStore(dir).getSnapshot().recording.outputAspectRatio).toBe("9:16");
+		expect(() =>
+			store.setRecordingPreferences({ outputAspectRatio: "1:1" as never }),
+		).toThrow(TypeError);
+	});
+
 	it("stores a camera quality and rejects one it cannot capture at", () => {
 		const dir = temp();
 		const store = new AppSettingsStore(dir);
