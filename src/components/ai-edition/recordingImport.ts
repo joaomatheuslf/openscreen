@@ -18,6 +18,7 @@ import type { CursorTelemetryPoint } from "@/components/video-editor/types";
 import { createId } from "@/lib/ai-edition/document/ids";
 import { clipAwaitsProbedDuration } from "@/lib/ai-edition/document/timeline";
 import type { AxcutDocument } from "@/lib/ai-edition/schema";
+import { patchEditorSettings } from "@/lib/ai-edition/store/editorSettings";
 import {
 	DOCUMENT_SAVES_WAIT_TIMEOUT_MS,
 	saveWithDeadline,
@@ -334,6 +335,7 @@ export async function importPendingRecording(
 	if (!api) return false;
 
 	const result = await api.getCurrentRecordingSession();
+	const recordingPrefs = await api.getRecordingPrefs().catch(() => null);
 	const screenPath = result.success ? result.session?.screenVideoPath : undefined;
 	if (!screenPath) return false;
 	const cursorCaptureMode = result.success ? result.session?.cursorCaptureMode : undefined;
@@ -342,6 +344,18 @@ export async function importPendingRecording(
 	const label = screenPath.split(/[\\/]/).pop() || "Recording";
 	await useProjectStore.getState().createProject(`Recording ${new Date().toLocaleString()}`);
 	await useProjectStore.getState().addAsset(screenPath, label);
+	// The raw capture stays full-frame. The selected recording format is an editor
+	// composition choice, so the same take can still be switched back to horizontal later.
+	const imported = useProjectStore.getState().document;
+	if (imported && recordingPrefs?.outputAspectRatio) {
+		const formatted = patchEditorSettings(imported, {
+			aspectRatio: recordingPrefs.outputAspectRatio,
+			// Portrait screen recordings need a moving crop rather than a tiny full
+			// desktop in the middle of the frame. The editor already owns this behavior.
+			formatFollowCursor: recordingPrefs.outputAspectRatio === "9:16",
+		});
+		await useProjectStore.getState().saveDocument(formatted, { history: false });
+	}
 	// Mark before the video element can fire `loadedmetadata`. The asset path is
 	// already on the document; waiting until the 60s seed finished let the first
 	// metadata pass consume nothing and the second never arrive.
