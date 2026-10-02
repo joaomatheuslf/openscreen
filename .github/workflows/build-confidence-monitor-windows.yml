@@ -1,0 +1,38 @@
+name: Build Confidence Monitor Windows Installer
+
+on:
+  push:
+    branches:
+      - feat-confidence-monitor
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: ./.github/actions/setup
+
+      - name: Build whisper STT payload
+        shell: bash
+        run: npm run build:whisper-binaries
+
+      - name: Build Windows installer
+        run: npm run build:win -- --publish never
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: openscreen-confidence-monitor-windows
+          path: |
+            release/**/Openscreen.Setup.*.exe
+            release/**/Openscreen.Setup.*.exe.blockmap
+            release/**/latest.yml
+          if-no-files-found: error
+          retention-days: 30
