@@ -335,9 +335,9 @@ export async function importPendingRecording(
 	if (!api) return false;
 
 	const result = await api.getCurrentRecordingSession();
-	const recordingPrefs = await api.getRecordingPrefs().catch(() => null);
 	const screenPath = result.success ? result.session?.screenVideoPath : undefined;
 	if (!screenPath) return false;
+	const recordingPrefs = (await api.getRecordingPrefs?.().catch(() => null)) ?? null;
 	const cursorCaptureMode = result.success ? result.session?.cursorCaptureMode : undefined;
 	const warning = result.success ? result.warning : undefined;
 
