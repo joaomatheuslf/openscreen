@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   windows-installer:
@@ -19,11 +18,33 @@ jobs:
       - name: Setup Node
         uses: ./.github/actions/setup
 
-      - name: Stage whisper STT binaries
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          vulkan_version: 1.4.304.1
+          install_runtime: false
+          cache: true
+
+      - name: Put glslc on PATH
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash scripts/stage-whisper-stt.sh win32-x64
+        run: |
+          set -euo pipefail
+          for cand in "${VULKAN_SDK}/Bin" "${VULKAN_SDK}/bin"; do
+            if [[ -d "${cand}" ]]; then
+              echo "${cand}" >> "$GITHUB_PATH"
+            fi
+          done
+
+      - name: Install SPIRV-Headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          VCPKG_ROOT_DIR="$(dirname "$(command -v vcpkg)")"
+          "${VCPKG_ROOT_DIR}/vcpkg" install spirv-headers:x64-windows
+          echo "CMAKE_PREFIX_PATH=${VCPKG_ROOT_DIR}/installed/x64-windows" >> "$GITHUB_ENV"
+
+      - name: Build whisper STT payload
+        run: npm run build:whisper-binaries
 
       - name: Build Windows installer
         run: npm run build:win -- --publish never
