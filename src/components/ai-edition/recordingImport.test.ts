@@ -234,6 +234,17 @@ describe("what the recording import leaves on the undo stack", () => {
 		expect(undo()).toBe(false);
 	});
 
+	it("opens a 9:16 take as a portrait cursor-following composition", async () => {
+		stubRecordingPrefs({ autoZoomEnabled: true, outputAspectRatio: "9:16" });
+
+		await importPendingRecording();
+
+		expect(useProjectStore.getState().document?.legacyEditor).toMatchObject({
+			aspectRatio: "9:16",
+			formatFollowCursor: true,
+		});
+	});
+
 	it("still has its clip after the first Ctrl+Z", async () => {
 		await importPendingRecording();
 

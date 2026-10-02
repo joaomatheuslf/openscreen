@@ -34,6 +34,10 @@ import {
 } from "../../src/lib/nativeMacRecording";
 import type { NativeWindowsRecordingRequest } from "../../src/lib/nativeWindowsRecording";
 import {
+	DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
+	type RecordingOutputAspectRatio,
+} from "../../src/lib/recordingFormat";
+import {
 	type CursorCaptureMode,
 	normalizeCursorCaptureMode,
 	normalizeProjectMedia,
@@ -664,6 +668,7 @@ export interface RecordingPrefs {
 	hideDesktopIcons: boolean;
 	/** Whether a fresh take gets automatic zooms on import. Persisted; defaults on. */
 	autoZoomEnabled: boolean;
+	outputAspectRatio: RecordingOutputAspectRatio;
 }
 const defaultRecordingPrefs: RecordingPrefs = {
 	micEnabled: false,
@@ -677,6 +682,7 @@ const defaultRecordingPrefs: RecordingPrefs = {
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
+	outputAspectRatio: DEFAULT_RECORDING_OUTPUT_ASPECT_RATIO,
 };
 
 // Cached source from the user's pick. Used by setDisplayMediaRequestHandler in main.ts for cursor-free capture.
@@ -719,6 +725,14 @@ function isTrustedProjectPath(filePath?: string | null) {
 
 const CURSOR_SAMPLE_INTERVAL_MS = 33;
 const MAX_CURSOR_SAMPLES = 60 * 60 * 30; // 1 hour @ 30Hz
+
+let confidenceMonitorCursorSink: ((sample: CursorRecordingSample) => void) | null = null;
+
+export function setConfidenceMonitorCursorSink(
+	sink: ((sample: CursorRecordingSample) => void) | null,
+) {
+	confidenceMonitorCursorSink = sink;
+}
 
 let cursorRecordingSession: CursorRecordingSession | null = null;
 let pendingCursorRecordingData: CursorRecordingData | null = null;
@@ -1299,6 +1313,7 @@ async function startCursorRecording(recordingId?: number) {
 		sourceId: getSelectedSourceId(),
 		startTimeMs:
 			typeof recordingId === "number" && Number.isFinite(recordingId) ? recordingId : undefined,
+		onSample: (sample) => confidenceMonitorCursorSink?.(sample),
 	});
 
 	try {

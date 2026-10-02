@@ -219,6 +219,7 @@ export class WindowsNativeRecordingSession implements CursorRecordingSession {
 		}
 
 		this.samples.push(normalized.sample);
+		this.options.onSample?.(normalized.sample);
 
 		if (this.samples.length > this.options.maxSamples) {
 			this.samples.shift();

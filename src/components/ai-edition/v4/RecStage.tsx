@@ -22,6 +22,7 @@ import { useCameraPreviewStream } from "@/hooks/useCameraPreviewStream";
 import { useEditableCursorAvailable } from "@/hooks/useEditableCursorAvailable";
 import { useMicrophoneDevices } from "@/hooks/useMicrophoneDevices";
 import { usePortalOwnsSource } from "@/hooks/usePortalOwnsSource";
+import type { RecordingOutputAspectRatio } from "@/lib/recordingFormat";
 import { canRecordMicrophone, getPlatform } from "@/utils/platformUtils";
 import styles from "./EditorShellV4.module.css";
 
@@ -36,6 +37,7 @@ interface RecordingPrefsState {
 	cursorCaptureMode: "editable-overlay" | "system";
 	hideDesktopIcons: boolean;
 	autoZoomEnabled: boolean;
+	outputAspectRatio: RecordingOutputAspectRatio;
 }
 
 const DEFAULT_PREFS: RecordingPrefsState = {
@@ -49,6 +51,7 @@ const DEFAULT_PREFS: RecordingPrefsState = {
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
+	outputAspectRatio: "16:9",
 };
 
 function normalizedRecordingPrefs(prefs: Partial<RecordingPrefsState>): RecordingPrefsState {
@@ -504,6 +507,29 @@ export function RecStage({
 							</Tooltip>
 						</div>
 					) : null}
+
+					<div className={styles.recRow}>
+						<div className={styles.recRowLabel}>
+							<MonitorSmartphone size={15} />
+							Formato
+						</div>
+						<div className={styles.recRowControl}>
+							{(["16:9", "9:16"] as const).map((ratio) => (
+								<button
+									key={ratio}
+									type="button"
+									data-testid={`rec-format-${ratio.replace(":", "-")}`}
+									className={`${styles.recToggleBtn}${
+										prefs.outputAspectRatio === ratio ? ` ${styles.on}` : ""
+									}`}
+									aria-pressed={prefs.outputAspectRatio === ratio}
+									onClick={() => updatePrefs({ outputAspectRatio: ratio })}
+								>
+									{ratio}
+								</button>
+							))}
+						</div>
+					</div>
 
 					{/* Auto-zoom places zooms from the cursor telemetry the editable-overlay mode
 					    writes. The system cursor writes none, so the row is not offered there. */}

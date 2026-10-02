@@ -24,6 +24,7 @@ const defaults: RecordingPrefs = {
 	cursorCaptureMode: "editable-overlay",
 	hideDesktopIcons: false,
 	autoZoomEnabled: true,
+	outputAspectRatio: "16:9",
 };
 let dir: string;
 beforeEach(() => {

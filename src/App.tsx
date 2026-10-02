@@ -5,6 +5,7 @@ import { installBrowserShims } from "./native/browserShim";
 
 installBrowserShims();
 
+import { ConfidenceMonitorWindow } from "./components/launch/ConfidenceMonitorWindow";
 import { CountdownOverlay } from "./components/launch/CountdownOverlay.tsx";
 import { LaunchWindow } from "./components/launch/LaunchWindow";
 import { NotesWindow } from "./components/launch/NotesWindow.tsx";
@@ -89,6 +90,8 @@ export default function App() {
 				return <SourceSelector />;
 			case "countdown-overlay":
 				return <CountdownOverlay />;
+			case "confidence-monitor":
+				return <ConfidenceMonitorWindow />;
 			case "permissions":
 				return <PermissionsWindow />;
 			case "cli-export":

@@ -57,6 +57,7 @@ import {
 	exportDiagnosticFile,
 	getSelectedDesktopSource,
 	registerIpcHandlers,
+	setConfidenceMonitorCursorSink,
 } from "./ipc/handlers";
 import { isOnlyLingeringOverlay } from "./lingeringOverlay";
 import { installMainProcessErrorGuards } from "./main-process-errors";
@@ -72,6 +73,7 @@ import { registerSttIpc, shutdownStt } from "./stt";
 import { checkLatestRelease } from "./update-checker";
 import { loadUpdateMode, saveUpdateMode } from "./update-settings";
 import {
+	createConfidenceMonitorWindow,
 	createCountdownOverlayWindow,
 	createEditorWindow,
 	createHudOverlayWindow,
@@ -149,7 +151,23 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let mainWindow: BrowserWindow | null = null;
 let sourceSelectorWindow: BrowserWindow | null = null;
 let countdownOverlayWindow: BrowserWindow | null = null;
+let confidenceMonitorWindow: BrowserWindow | null = null;
 let notesWindow: BrowserWindow | null = null;
+let confidenceMonitorState = {
+	recording: false,
+	sourceName: "Screen",
+	startedAtMs: null as number | null,
+};
+setConfidenceMonitorCursorSink((sample) => {
+	if (
+		!confidenceMonitorWindow ||
+		confidenceMonitorWindow.isDestroyed() ||
+		!confidenceMonitorState.recording
+	) {
+		return;
+	}
+	confidenceMonitorWindow.webContents.send("confidence-monitor-cursor", sample);
+});
 let tray: Tray | null = null;
 let selectedSourceName = "";
 const isMac = process.platform === "darwin";
@@ -1071,6 +1089,25 @@ function createNotesWindowWrapper() {
 	}
 }
 
+function sendConfidenceMonitorState() {
+	if (!confidenceMonitorWindow || confidenceMonitorWindow.isDestroyed()) return;
+	confidenceMonitorWindow.webContents.send("confidence-monitor-state", confidenceMonitorState);
+}
+
+function ensureConfidenceMonitorWindow() {
+	if (confidenceMonitorWindow && !confidenceMonitorWindow.isDestroyed()) {
+		confidenceMonitorWindow.showInactive();
+		sendConfidenceMonitorState();
+		return confidenceMonitorWindow;
+	}
+	confidenceMonitorWindow = createConfidenceMonitorWindow();
+	confidenceMonitorWindow.on("closed", () => {
+		confidenceMonitorWindow = null;
+	});
+	confidenceMonitorWindow.webContents.once("did-finish-load", sendConfidenceMonitorState);
+	return confidenceMonitorWindow;
+}
+
 function createCountdownOverlayWindowWrapper() {
 	if (countdownOverlayWindow && !countdownOverlayWindow.isDestroyed()) {
 		return countdownOverlayWindow;
@@ -1257,6 +1294,16 @@ appReady?.then(async () => {
 	// this is where the check and the install channel already live — but inside `appReady`, like
 	// every other handler in this file: at module scope they would also be live in the headless
 	// CLI boot path and in a losing second instance that is on its way to app.quit().
+	ipcMain.handle("confidence-monitor:get-state", () => confidenceMonitorState);
+	ipcMain.on("confidence-monitor:open", () => {
+		ensureConfidenceMonitorWindow();
+	});
+	ipcMain.on("confidence-monitor:close", () => {
+		if (confidenceMonitorWindow && !confidenceMonitorWindow.isDestroyed()) {
+			confidenceMonitorWindow.hide();
+		}
+	});
+
 	ipcMain.handle("get-app-info", () => ({
 		version: app.getVersion(),
 		canCheckForUpdates: channelAllowsUpdateCheck(),
@@ -1385,6 +1432,17 @@ appReady?.then(async () => {
 		(recording: boolean, sourceName: string) => {
 			selectedSourceName = sourceName;
 			isRecording = recording;
+			confidenceMonitorState = {
+				recording,
+				sourceName: sourceName || "Screen",
+				startedAtMs: recording ? Date.now() : null,
+			};
+			if (recording) {
+				ensureConfidenceMonitorWindow();
+			} else if (confidenceMonitorWindow && !confidenceMonitorWindow.isDestroyed()) {
+				sendConfidenceMonitorState();
+				confidenceMonitorWindow.hide();
+			}
 			setDisplaySleepBlocked(recording);
 			if (!tray) createTray();
 			updateTrayMenu(recording);

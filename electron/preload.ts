@@ -162,6 +162,50 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		ipcRenderer.on("recording-prefs-changed", listener);
 		return () => ipcRenderer.removeListener("recording-prefs-changed", listener);
 	},
+	getConfidenceMonitorState: () =>
+		ipcRenderer.invoke("confidence-monitor:get-state") as Promise<{
+			recording: boolean;
+			sourceName: string;
+			startedAtMs: number | null;
+		}>,
+	onConfidenceMonitorState: (
+		callback: (state: {
+			recording: boolean;
+			sourceName: string;
+			startedAtMs: number | null;
+		}) => void,
+	) => {
+		const listener = (
+			_event: unknown,
+			state: { recording: boolean; sourceName: string; startedAtMs: number | null },
+		) => callback(state);
+		ipcRenderer.on("confidence-monitor-state", listener);
+		return () => ipcRenderer.removeListener("confidence-monitor-state", listener);
+	},
+	onConfidenceMonitorCursor: (
+		callback: (sample: {
+			timeMs: number;
+			cx: number;
+			cy: number;
+			visible?: boolean;
+			interactionType?: string;
+		}) => void,
+	) => {
+		const listener = (
+			_event: unknown,
+			sample: {
+				timeMs: number;
+				cx: number;
+				cy: number;
+				visible?: boolean;
+				interactionType?: string;
+			},
+		) => callback(sample);
+		ipcRenderer.on("confidence-monitor-cursor", listener);
+		return () => ipcRenderer.removeListener("confidence-monitor-cursor", listener);
+	},
+	openConfidenceMonitor: () => ipcRenderer.send("confidence-monitor:open"),
+	closeConfidenceMonitor: () => ipcRenderer.send("confidence-monitor:close"),
 	onSelectedSourceChanged: (callback: (source: ProcessedDesktopSource | null) => void) => {
 		const listener = (_event: unknown, source: ProcessedDesktopSource | null) => callback(source);
 		ipcRenderer.on("selected-source-changed", listener);
