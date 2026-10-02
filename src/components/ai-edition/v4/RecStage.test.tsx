@@ -207,7 +207,7 @@ describe("RecStage controls", () => {
 		const { getRecordingPrefs, setRecordingPrefs } = stubRecordingPrefs({
 			micEnabled: false,
 			cursorCaptureMode: "editable-overlay",
-			autoZoomEnabled: true,
+			autoZoomEnabled: true,\n\t\t\toutputAspectRatio: "16:9",
 		});
 		renderRecStage();
 		await waitFor(() => expect(getRecordingPrefs).toHaveBeenCalled());
@@ -240,7 +240,7 @@ describe("RecStage controls", () => {
 		const { setRecordingPrefs } = stubRecordingPrefs({
 			micEnabled: false,
 			cursorCaptureMode: "system",
-			autoZoomEnabled: true,
+			autoZoomEnabled: true,\n\t\t\toutputAspectRatio: "16:9",
 		});
 		renderRecStage();
 		await waitFor(() => expect(screen.queryByTestId("rec-auto-zoom-button")).toBeNull());
@@ -262,7 +262,7 @@ describe("RecStage controls", () => {
 		const { getRecordingPrefs } = stubRecordingPrefs({
 			micEnabled: false,
 			cursorCaptureMode: "editable-overlay",
-			autoZoomEnabled: true,
+			autoZoomEnabled: true,\n\t\t\toutputAspectRatio: "16:9",
 		});
 		const api = window.electronAPI as unknown as Record<string, unknown>;
 		const setRecordingPrefs = vi.fn(async () => {
@@ -294,7 +294,7 @@ describe("RecStage controls", () => {
 			systemAudioEnabled: false,
 			cursorCaptureMode: "editable-overlay",
 			hideDesktopIcons: false,
-			autoZoomEnabled: true,
+			autoZoomEnabled: true,\n\t\t\toutputAspectRatio: "16:9",
 		};
 		stubRecordingPrefs();
 		let answerReread: ((prefs: RecordingPrefs) => void) | undefined;
@@ -505,7 +505,7 @@ describe("RecStage controls", () => {
 			systemAudioEnabled: false,
 			cursorCaptureMode: "editable-overlay",
 			hideDesktopIcons: false,
-			autoZoomEnabled: true,
+			autoZoomEnabled: true,\n\t\t\toutputAspectRatio: "16:9",
 		};
 		act(() => {
 			recordingPrefsListeners.forEach((listener) => listener(resetPrefs));
