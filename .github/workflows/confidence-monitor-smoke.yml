@@ -1,0 +1,16 @@
+name: Confidence Monitor Smoke
+
+on:
+  push:
+    branches:
+      - test-confidence-monitor
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: npx tsc --noEmit
+      - run: npx vitest --run electron/app-settings.test.ts src/components/ai-edition/recordingImport.test.ts
+      - run: npx vite build
